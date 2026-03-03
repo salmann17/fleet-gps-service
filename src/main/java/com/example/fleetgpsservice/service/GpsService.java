@@ -21,10 +21,9 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class GpsService {
 
-    private static final double SPEED_VIOLATION_THRESHOLD = 100.0;
-
     private final VehicleRepository vehicleRepository;
     private final GpsLogRepository gpsLogRepository;
+    private final SpeedViolationService speedViolationService;
 
     @Transactional
     public GpsResponseDTO recordGpsLog(GpsRequestDTO request) {
@@ -37,7 +36,7 @@ public class GpsService {
                 .longitude(request.longitude())
                 .speed(request.speed())
                 .timestamp(request.timestamp())
-                .speedViolation(request.speed() > SPEED_VIOLATION_THRESHOLD)
+                .speedViolation(speedViolationService.isViolation(request.speed()))
                 .build();
 
         GpsLog saved = gpsLogRepository.save(gpsLog);
