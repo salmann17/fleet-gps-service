@@ -4,6 +4,7 @@ import com.example.fleetgpsservice.dto.GpsRequestDTO;
 import com.example.fleetgpsservice.dto.GpsResponseDTO;
 import com.example.fleetgpsservice.entity.GpsLog;
 import com.example.fleetgpsservice.entity.Vehicle;
+import com.example.fleetgpsservice.exception.GpsLogNotFoundException;
 import com.example.fleetgpsservice.exception.VehicleNotFoundException;
 import com.example.fleetgpsservice.repository.GpsLogRepository;
 import com.example.fleetgpsservice.repository.VehicleRepository;
@@ -37,6 +38,16 @@ public class GpsService {
         GpsLog saved = gpsLogRepository.save(gpsLog);
 
         return toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public GpsResponseDTO getLastLocation(Long vehicleId) {
+        if (!vehicleRepository.existsById(vehicleId)) {
+            throw new VehicleNotFoundException(vehicleId);
+        }
+        GpsLog log = gpsLogRepository.findTopByVehicleIdOrderByTimestampDesc(vehicleId)
+                .orElseThrow(() -> new GpsLogNotFoundException(vehicleId));
+        return toResponse(log);
     }
 
     private GpsResponseDTO toResponse(GpsLog log) {
