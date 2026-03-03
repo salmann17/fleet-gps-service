@@ -1,5 +1,4 @@
 services:
-
   db:
     image: postgres:15
     restart: unless-stopped
@@ -7,6 +6,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-fleetgps}
       POSTGRES_USER: ${POSTGRES_USER:-fleetuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fleetpass}
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -18,30 +19,9 @@ services:
       retries: 5
       start_period: 20s
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-fleetgps}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-fleetuser}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-fleetpass}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_SHOW_SQL: "false"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - fleet-net
-
 networks:
   fleet-net:
     driver: bridge
 
 volumes:
   postgres_data:
-
