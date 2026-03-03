@@ -5,12 +5,17 @@ import com.example.fleetgpsservice.dto.GpsResponseDTO;
 import com.example.fleetgpsservice.entity.GpsLog;
 import com.example.fleetgpsservice.entity.Vehicle;
 import com.example.fleetgpsservice.exception.GpsLogNotFoundException;
+import com.example.fleetgpsservice.exception.InvalidDateRangeException;
 import com.example.fleetgpsservice.exception.VehicleNotFoundException;
 import com.example.fleetgpsservice.repository.GpsLogRepository;
 import com.example.fleetgpsservice.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +53,19 @@ public class GpsService {
         GpsLog log = gpsLogRepository.findTopByVehicleIdOrderByTimestampDesc(vehicleId)
                 .orElseThrow(() -> new GpsLogNotFoundException(vehicleId));
         return toResponse(log);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<GpsResponseDTO> getHistory(Long vehicleId, Instant from, Instant to, Pageable pageable) {
+        if (from.isAfter(to)) {
+            throw new InvalidDateRangeException();
+        }
+        if (!vehicleRepository.existsById(vehicleId)) {
+            throw new VehicleNotFoundException(vehicleId);
+        }
+        return gpsLogRepository
+                .findByVehicleIdAndTimestampBetween(vehicleId, from, to, pageable)
+                .map(this::toResponse);
     }
 
     private GpsResponseDTO toResponse(GpsLog log) {
