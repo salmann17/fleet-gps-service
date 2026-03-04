@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fleetgps}
+      POSTGRES_USER: ${POSTGRES_USER:-fleetuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fleetpass}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fleet-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fleetuser} -d ${POSTGRES_DB:-fleetgps}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  fleet-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
