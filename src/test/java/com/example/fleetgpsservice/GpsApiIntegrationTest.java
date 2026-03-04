@@ -4,6 +4,7 @@ import com.example.fleetgpsservice.entity.GpsLog;
 import com.example.fleetgpsservice.entity.Vehicle;
 import com.example.fleetgpsservice.repository.GpsLogRepository;
 import com.example.fleetgpsservice.repository.VehicleRepository;
+import com.example.fleetgpsservice.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,11 @@ class GpsApiIntegrationTest {
     @Autowired
     private GpsLogRepository gpsLogRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
     private Vehicle testVehicle;
+    private String token;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +53,8 @@ class GpsApiIntegrationTest {
                         .type("TRUCK")
                         .build()
         );
+
+        token = jwtService.generateToken("admin");
     }
 
     @Test
@@ -63,6 +70,7 @@ class GpsApiIntegrationTest {
                 """.formatted(testVehicle.getId());
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
@@ -87,6 +95,7 @@ class GpsApiIntegrationTest {
                 """.formatted(testVehicle.getId());
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
@@ -107,6 +116,7 @@ class GpsApiIntegrationTest {
                 """.formatted(testVehicle.getId());
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest());
@@ -125,6 +135,7 @@ class GpsApiIntegrationTest {
                 """.formatted(testVehicle.getId());
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest());
@@ -143,6 +154,7 @@ class GpsApiIntegrationTest {
                 """.formatted(testVehicle.getId());
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest());
@@ -161,6 +173,7 @@ class GpsApiIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/gps")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isNotFound());
@@ -182,7 +195,8 @@ class GpsApiIntegrationTest {
                 .speedViolation(false)
                 .build());
 
-        mockMvc.perform(get("/api/vehicles/{id}/last-location", testVehicle.getId()))
+        mockMvc.perform(get("/api/vehicles/{id}/last-location", testVehicle.getId())
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.latitude").value(-6.2))
                 .andExpect(jsonPath("$.longitude").value(106.2))
@@ -192,13 +206,15 @@ class GpsApiIntegrationTest {
 
     @Test
     void getLastLocation_vehicleNotFound_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/vehicles/{id}/last-location", 99999))
+        mockMvc.perform(get("/api/vehicles/{id}/last-location", 99999)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getLastLocation_noLogs_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/vehicles/{id}/last-location", testVehicle.getId()))
+        mockMvc.perform(get("/api/vehicles/{id}/last-location", testVehicle.getId())
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 
@@ -226,6 +242,7 @@ class GpsApiIntegrationTest {
                 .build());
 
         mockMvc.perform(get("/api/vehicles/{id}/history", testVehicle.getId())
+                        .header("Authorization", "Bearer " + token)
                         .param("from", "2025-01-01T00:00:00Z")
                         .param("to", "2025-01-01T23:59:59Z"))
                 .andExpect(status().isOk())
@@ -237,6 +254,7 @@ class GpsApiIntegrationTest {
     @Test
     void getHistory_vehicleNotFound_returnsNotFound() throws Exception {
         mockMvc.perform(get("/api/vehicles/{id}/history", 99999)
+                        .header("Authorization", "Bearer " + token)
                         .param("from", "2025-01-01T00:00:00Z")
                         .param("to", "2025-01-01T23:59:59Z"))
                 .andExpect(status().isNotFound());
@@ -245,6 +263,7 @@ class GpsApiIntegrationTest {
     @Test
     void getHistory_noLogs_returnsEmptyPage() throws Exception {
         mockMvc.perform(get("/api/vehicles/{id}/history", testVehicle.getId())
+                        .header("Authorization", "Bearer " + token)
                         .param("from", "2025-01-01T00:00:00Z")
                         .param("to", "2025-01-01T23:59:59Z"))
                 .andExpect(status().isOk())
@@ -254,6 +273,7 @@ class GpsApiIntegrationTest {
     @Test
     void getHistory_fromAfterTo_returnsBadRequest() throws Exception {
         mockMvc.perform(get("/api/vehicles/{id}/history", testVehicle.getId())
+                        .header("Authorization", "Bearer " + token)
                         .param("from", "2025-01-02T00:00:00Z")
                         .param("to", "2025-01-01T00:00:00Z"))
                 .andExpect(status().isBadRequest());
